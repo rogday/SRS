@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <array>
+#include <cassert>
 #include <chrono>
 #include <iostream>
 #include <limits>
@@ -9,7 +10,6 @@
 
 namespace test {
 using u64 = std::uint64_t;
-using u32 = std::uint32_t;
 constexpr u64 Bytes = 2;
 constexpr u64 Bits = 8 * Bytes;
 constexpr u64 C = (static_cast<u64>(1) << Bits);
@@ -17,13 +17,13 @@ constexpr u64 C = (static_cast<u64>(1) << Bits);
 u64 ind(u64 i, u64 deg) { return (i >> (deg << 4)) % C; }
 
 void countSort(std::vector<u64> &A, std::vector<u64> &R, u64 deg) {
-	std::array<u32, C> B{};
+	std::array<u64, C> B{};
 
 	for (u64 i : A)
 		++B[ind(i, deg)];
 	std::partial_sum(std::begin(B), std::end(B), std::begin(B));
 
-	for (u32 i = A.size(); i--;)
+	for (u64 i = A.size(); i--;)
 		R[--B[ind(A[i], deg)]] = A[i];
 	std::swap(A, R);
 }
@@ -50,17 +50,17 @@ int main() {
 	test::radixSort(v1);
 	auto end = std::chrono::system_clock::now();
 
-	std::cout << std::chrono::duration<double>(end - start).count() << " sec."
+	std::cout << "Radix sort: "
+			  << std::chrono::duration<double>(end - start).count() << " sec."
 			  << std::endl;
 
 	start = std::chrono::system_clock::now();
 	std::sort(std::begin(v2), std::end(v2));
 	end = std::chrono::system_clock::now();
 
-	std::cout << std::chrono::duration<double>(end - start).count() << " sec."
+	std::cout << "std::sort: "
+			  << std::chrono::duration<double>(end - start).count() << " sec."
 			  << std::endl;
 
-	std::cout << (v1 == v2) << std::endl;
-	// for (test::u64 i = 0; i < v1.size(); ++i) std::cout << v1[i] << ' ' <<
-	// v2[i]<<std::endl;
+	assert(v1 == v2);
 }
