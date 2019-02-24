@@ -14,7 +14,7 @@ int main() {
 	std::uniform_int_distribution<srs::u64> uniform_dist(
 		0, std::numeric_limits<srs::u64>::max());
 
-	std::vector<srs::u64> v1(100'000);
+	std::vector<srs::u64> v1(100'000'000);
 	for (srs::u64 &i : v1)
 		i = uniform_dist(e1);
 	std::vector v2(v1);
