@@ -1,37 +1,42 @@
 #pragma once
+#include <iostream>
+#include <vector>
+#include <list>
+#include <random> 
 
-#include <random>
 
-#include <boost/config.hpp>
-#include <boost/graph/adjacency_list.hpp>
-#include <boost/graph/depth_first_search.hpp>
-#include <boost/graph/graphviz.hpp>
-#include <boost/graph/random.hpp>
+class Graph{
+	enum Colors { White, Gray, Black };
+	struct Node{
+		int vertex;
+		int index;
+		bool tree_edge;
+		std::uint64_t shift;
+	};
+	std::vector<std::list<Node>> matrix;
+	std::vector<Colors> map;
+	std::vector<std::uint64_t> sums;
 
-namespace srs {
-struct tree_edge {
-	typedef boost::edge_property_tag kind;
-};
-struct shift {
-	typedef boost::edge_property_tag kind;
-};
+	std::vector<int> det_bridges;
+	std::vector<int> rand_bridges;
 
-typedef boost::property<tree_edge, bool, boost::property<shift, std::uint64_t>>
-	EdgeProperty;
+	std::vector<int> time_discover(matrix.size(), 0);
+	std::vector<int> time_minimal(matrix.size(), 0);//min(time_disc[v], time_disc[backward_edges])
 
-typedef boost::property<boost::vertex_degree_t, std::uint64_t> VertexProperty;
+	std::random_device rd;
+	std::default_random_engine engine;
+	std::uniform_int_destribution<std::uint64_t> rand;
 
-typedef boost::adjacency_list<boost::listS, boost::vecS, boost::undirectedS,
-							  EdgeProperty, VertexProperty>
-	Graph;
+public:
+	Graph() : engine(rd()) {}
+	void dfs(int&, int&);
+	//bridges search methods
+	void determined_bridges_search();
 
-Graph makeGraph(std::uint64_t n, std::uint64_t m);
+	void dfs_based_randomized_bridges_search();
+	std::vector<int> randomized_bridges_search(int&);
 
-class Visitor : public boost::default_dfs_visitor {
-  public:
-	typedef Graph::edge_descriptor Edge;
-	void examine_edge(Edge v, const Graph &g);
-	void tree_edge(Edge v, const Graph &g);
-	void finish_edge(Edge v, const Graph &g);
-};
-} // namespace srs
+	//2-bridges search method
+
+
+}
