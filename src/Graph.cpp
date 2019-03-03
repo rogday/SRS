@@ -3,42 +3,44 @@
 #include <RadixSort.h>
 
 
-//возможно .index надо менять на .vertex если index - номер ребра
-void Graph::dfs(int &v, int &timer, int &backward = -1){
-	map[v] = Colors::Grey;
+void Graph::dfs(int v, int &timer, uint64_t backward = -1){
+	if (colorMap[v] != Colors::White)
+			return;
+		
+	colorMap[v] = Colors::Grey;
 	time_discover[v] = time_minimal[v] = timer++;
-	for (auto &e : matrix[v]){
-		if (e == backward)
+	for (auto index : matrix[v]){
+		auto& e = edges[index];
+		if (e.v == backward)
 			continue;
-		if (map[e.vertex] == Colors::Grey)
-			time_minimal[v] = std::min(time_minimal[v], time_discover[e.vertex])
-		else{
-			dfs(e.vertex, timer, v);
-			time_minimal[v] = std::min(time_minimal[v], time_minimal[e.vertex]);
-			if (time_minimal[e.vertex] > time_discover[v])
-				bridges.push_back(std::pair(v, e.vertex));
+		if (colorMap[e.v] == Colors::Grey){
+			time_minimal[v] = std::min(time_minimal[v], time_discover[e.v]);
+		} else {
+			  Graph::dfs(e.v, timer, v);
+			  time_minimal[v] = std::min(time_minimal[v], time_minimal[e.v]);
+			  if (time_minimal[e.v] > time_discover[v])
+				  bridges.push_back(Edge(e.v, v, true, 0));
 		}
 	}
-	map[v] = Colors::Black;
-
-}
+	colorMap[v] = Colors::Black;
+};
 
 void Graph::determined_bridges_search(){
 	int timer = 0;
-	for (int i = 0; i < n; ++i){
-		if (map[i] != Colors::Black)
-			dfs(i, timer);
+	for (int i = 0; i < colorMap.size(); ++i){
+		if (colorMap[i] != Colors::Black)
+			Graph::dfs(i, timer);
 	}
-}
-
+};
+/**
 //must be updated
-void Graph::dfs_based_randomized_bridges(int &v){
-	if (map[v] == Colors::Black)
+void Graph::dfs_based_randomized_bridges_search(int &v){
+	if (colorMap[v] == Colors::Black)
 		return;
 
-	map[v] = Colors::Grey;
+	colorMap[v] = Colors::Grey;
 	for (auto &e : matrix[v]){
-		if (map[e.vertex] != Colors::White){
+		if (colorMap[e.vertex] != Colors::White){
 			e.shift = rand(engine);
 			sums[v] ^= e.shift;
 			sums[e.vertex] ^= e.shift;
@@ -53,7 +55,7 @@ void Graph::dfs_based_randomized_bridges(int &v){
 			sums[e.vertex] = 0;
 		}
 	}
-	map[v] = Colors::Black;
+	colorMap[v] = Colors::Black;
 }
 
 std::vector<int> Graph::randomized_bridges(){
@@ -67,58 +69,60 @@ std::vector<int> Graph::randomized_bridges(){
 		//...
 	}
 
-}
-
+};
+**/
 void Graph::dfsForRandom(std::uint64_t v) {
 		if (colorMap[v] != Colors::White)
 			return;
 
-		std::cout << "Now in " << v << "===============" << std::endl;
-
 		colorMap[v] = Colors::Grey;
-		for (auto &e : matrix[v]) {
+		for (auto index : matrix[v]) {
+			auto &e = edges[index];
+			std::uint64_t u = ((e.u == v) ? e.v : e.u);
 			bool tree_edge = false;
 
-			if (colorMap[e.vertex] != Colors::White) {
+			if (colorMap[u] != Colors::White) {
 				if (!e.finished) {
 					e.shift = rand(engine);
 					sums[v] ^= e.shift;
-					sums[e.vertex] ^= e.shift;
+					sums[u] ^= e.shift;
 					e.finished = true;
 				}
 			} else {
 				tree_edge = true;
 				e.finished = true;
-				dfsForRandom(e.vertex);
+				dfsForRandom(u);
 			}
 
 			if (tree_edge) {
-				e.shift = sums[e.vertex];
+				e.shift = sums[u];
 				sums[v] ^= e.shift;
-				sums[e.vertex] = 0;
+				sums[u] = 0;
 			}
 		}
 		colorMap[v] = Colors::Black;
-	}
-
-void Graph::clear() {
-	for (auto &v : matrix)
-		for (auto &e : v)
-			e.finished = false;
 };
 
+void Graph::clear() {
+	for (auto &e : edges)
+		e.finished = false;
+	};
+
 Graph::Graph(std::uint64_t n, std::uint64_t m)
-		: matrix(n), colorMap(n, Colors::White), sums(n, 0), engine(rd()),
+		: matrix(n), edges(m, Edge(0, 0, false, 0)), colorMap(n, Colors::White),
+		  sums(n, 0), engine(rd()),
 		  rand(0, std::numeric_limits<std::uint64_t>::max()) {
 		std::vector<std::uint8_t> helper(n * n);
 		std::uniform_int_distribution<std::uint64_t> randomVertex(0, n - 1);
-		std::uint64_t u, v;
+		std::uint64_t u, v, index = 0;
 
 		auto addEdge = [&]() {
 			std::cout << "(" << u << ", " << v << ")" << std::endl;
 			helper[u * n + v] = helper[v * n + u] = 1;
-			matrix[u].emplace_back(v, false, 0);
-			matrix[v].emplace_back(u, false, 0);
+			matrix[u].push_back(index);
+			matrix[v].push_back(index);
+			edges[index].v = v;
+			edges[index++].u = u;
 		};
 
 		for (v = 1; v <= n - 1; ++v) {
@@ -139,10 +143,14 @@ Graph::Graph(std::uint64_t n, std::uint64_t m)
 
 void Graph::randomBridgeSearch() {
 		dfsForRandom(0);
-		for (std::uint64_t i = 0; i < matrix.size(); ++i)
-			for (auto &e : matrix[i]) {
-				if (e.shift == 0)
-					std::cout << "Edge from " << i << " to " << e.vertex
-							  << " is a bridge." << std::endl;
+		bool flag = true;
+		for (auto e : edges)
+			if (e.shift == 0){
+				std::cout << "Edge from " << e.u << " to " << e.v
+						  << " is a bridge." << std::endl;
+				flag = false;
 			}
-	}
+		if (flag)
+			std::cout<<"There are no bridges!" <<std::endl;
+
+};
