@@ -68,3 +68,81 @@ std::vector<int> Graph::randomized_bridges(){
 	}
 
 }
+
+void Graph::dfsForRandom(std::uint64_t v) {
+		if (colorMap[v] != Colors::White)
+			return;
+
+		std::cout << "Now in " << v << "===============" << std::endl;
+
+		colorMap[v] = Colors::Grey;
+		for (auto &e : matrix[v]) {
+			bool tree_edge = false;
+
+			if (colorMap[e.vertex] != Colors::White) {
+				if (!e.finished) {
+					e.shift = rand(engine);
+					sums[v] ^= e.shift;
+					sums[e.vertex] ^= e.shift;
+					e.finished = true;
+				}
+			} else {
+				tree_edge = true;
+				e.finished = true;
+				dfsForRandom(e.vertex);
+			}
+
+			if (tree_edge) {
+				e.shift = sums[e.vertex];
+				sums[v] ^= e.shift;
+				sums[e.vertex] = 0;
+			}
+		}
+		colorMap[v] = Colors::Black;
+	}
+
+void Graph::clear() {
+	for (auto &v : matrix)
+		for (auto &e : v)
+			e.finished = false;
+};
+
+Graph::Graph(std::uint64_t n, std::uint64_t m)
+		: matrix(n), colorMap(n, Colors::White), sums(n, 0), engine(rd()),
+		  rand(0, std::numeric_limits<std::uint64_t>::max()) {
+		std::vector<std::uint8_t> helper(n * n);
+		std::uniform_int_distribution<std::uint64_t> randomVertex(0, n - 1);
+		std::uint64_t u, v;
+
+		auto addEdge = [&]() {
+			std::cout << "(" << u << ", " << v << ")" << std::endl;
+			helper[u * n + v] = helper[v * n + u] = 1;
+			matrix[u].emplace_back(v, false, 0);
+			matrix[v].emplace_back(u, false, 0);
+		};
+
+		for (v = 1; v <= n - 1; ++v) {
+			std::uniform_int_distribution<std::uint64_t> vertex(0, v - 1);
+			u = vertex(engine);
+			addEdge();
+		}
+
+		for (std::uint64_t i = 0; i < m - n + 1; ++i) {
+			do {
+				u = randomVertex(engine);
+				v = randomVertex(engine);
+			} while (helper[u * n + v] != 0 || u == v);
+
+			addEdge();
+		}
+};
+
+void Graph::randomBridgeSearch() {
+		dfsForRandom(0);
+		for (std::uint64_t i = 0; i < matrix.size(); ++i)
+			for (auto &e : matrix[i]) {
+				if (e.shift == 0)
+					std::cout << "Edge from " << i << " to " << e.vertex
+							  << " is a bridge." << std::endl;
+			}
+	}
