@@ -38,4 +38,5 @@ int main() {
 			 std::bind(&Graph::determined_bridges_search, _1), show);
 	estimate(g, "Random two-bridges",
 			 std::bind(&Graph::random_two_bridges_search, _1), show);
+
 }
