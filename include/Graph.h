@@ -64,3 +64,6 @@ class Graph {
 
 	std::vector<Bridges> random_two_bridges_search();
 };
+
+std::ostream &operator<<(std::ostream &, const Graph::LightEdge &);
+std::ostream &operator<<(std::ostream &, const Graph::Bridges &);

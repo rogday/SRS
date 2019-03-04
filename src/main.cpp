@@ -8,7 +8,7 @@
 using namespace std::placeholders;
 
 template <class Functor>
-void estimate(Graph &g, std::string_view name, Functor f) {
+void estimate(Graph &g, std::string_view name, Functor f, bool show) {
 	auto start = std::chrono::system_clock::now();
 	auto bridges = f(&g);
 	auto end = std::chrono::system_clock::now();
@@ -18,12 +18,9 @@ void estimate(Graph &g, std::string_view name, Functor f) {
 			  << std::chrono::duration<double>(end - start).count() << " sec."
 			  << std::endl;
 
-	// for (auto &e : bridges) {
-	//	for (auto &ee : e) {
-	//		std::cout << "(" << ee.u << ", " << ee.v << ") ";
-	//	}
-	//	std::cout << std::endl;
-	//}
+	if (show)
+		for (auto &e : bridges)
+			std::cout << e << std::endl;
 }
 
 int main() {
@@ -31,11 +28,14 @@ int main() {
 	std::cin >> n >> m;
 
 	Graph g(n, m);
-	std::cout << g;
 
-	// estimate(g, "Random", std::bind(&Graph::random_bridges_search, _1));
-	// estimate(g, "Determenistic",
-	//		 std::bind(&Graph::determined_bridges_search, _1));
+	bool show = (n * m <= 1000);
+	if (show)
+		std::cout << g;
+
+	estimate(g, "Random", std::bind(&Graph::random_bridges_search, _1), show);
+	estimate(g, "Determenistic",
+			 std::bind(&Graph::determined_bridges_search, _1), show);
 	estimate(g, "Random two-bridges",
-			 std::bind(&Graph::random_two_bridges_search, _1));
+			 std::bind(&Graph::random_two_bridges_search, _1), show);
 }

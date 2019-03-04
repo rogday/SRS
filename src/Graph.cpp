@@ -58,6 +58,12 @@ std::ostream &operator<<(std::ostream &stream, const Graph::LightEdge &e) {
 	return stream;
 }
 
+std::ostream &operator<<(std::ostream &stream, const Graph::Bridges &bridges) {
+	for (auto &e : bridges)
+		stream << e << " ";
+	return stream;
+}
+
 std::ostream &operator<<(std::ostream &stream, const Graph &g) {
 	for (auto &e : g.edges)
 		stream << e << std::endl;
