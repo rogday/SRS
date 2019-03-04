@@ -18,14 +18,17 @@ class Graph {
 		}
 	};
 
-  private:
 	struct Edge : public LightEdge {
 		Edge(std::uint64_t u, std::uint64_t v, bool f, std::uint64_t shift)
 			: LightEdge(u, v), finished(f), shift(shift) {}
 		bool finished;
 		std::uint64_t shift;
+		bool operator==(const Edge &other) const {
+			return shift == other.shift;
+		}
 	};
 
+  private:
 	// the Graph itself
 	std::vector<std::vector<std::uint64_t>> matrix;
 	std::vector<Edge> edges;
@@ -56,8 +59,8 @@ class Graph {
 	Graph(std::uint64_t n, std::uint64_t m);
 
 	using Bridges = std::vector<LightEdge>;
-	std::vector<LightEdge> random_bridges_search();
-	std::vector<LightEdge> determined_bridges_search();
+	Bridges random_bridges_search();
+	Bridges determined_bridges_search();
 
-	std::vector<LightEdge> random_two_bridges_search();
+	std::vector<Bridges> random_two_bridges_search();
 };

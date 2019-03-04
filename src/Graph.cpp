@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <iostream>
 #include <unordered_set>
 
@@ -52,9 +53,14 @@ Graph::Graph(std::uint64_t n, std::uint64_t m)
 	}
 };
 
+std::ostream &operator<<(std::ostream &stream, const Graph::LightEdge &e) {
+	stream << "(" << e.u << ", " << e.v << ")";
+	return stream;
+}
+
 std::ostream &operator<<(std::ostream &stream, const Graph &g) {
 	for (auto &e : g.edges)
-		stream << "(" << e.u << ", " << e.v << ")" << std::endl;
+		stream << e << std::endl;
 	return stream;
 }
 
@@ -64,6 +70,30 @@ void Graph::clear() {
 		c = Colors::White;
 	for (auto &e : edges)
 		e.finished = false;
+};
+
+std::vector<Graph::Bridges> Graph::random_two_bridges_search() {
+	std::vector<Graph::Bridges> out;
+	random_bridges_search();
+	srs::radixSort(edges);
+
+	for (auto it = edges.begin(), jt = it; it != edges.end(); jt = it) {
+		Graph::Bridges bridges;
+
+		jt = it = std::adjacent_find(jt, edges.end());
+
+		if (jt == edges.end())
+			break;
+
+		while (it != edges.end() && *it == *jt) {
+			bridges.emplace_back(it->u, it->v);
+			++it;
+		}
+
+		out.push_back(bridges);
+	}
+
+	return out;
 };
 
 Graph::Bridges Graph::random_bridges_search() {
