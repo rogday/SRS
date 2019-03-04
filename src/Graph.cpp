@@ -1,38 +1,80 @@
+#include <iostream>
+#include <unordered_set>
+
 #include <Graph.h>
 #include <RadixSort.h>
-#include <iostream>
 
-void Graph::dfs(int v, int &timer, uint64_t backward = -1) {
-	if (colorMap[v] != Colors::White)
-		return;
-
-	colorMap[v] = Colors::Grey;
-	time_discover[v] = time_minimal[v] = timer++;
-	for (auto index : matrix[v]) {
-		auto &e = edges[index];
-		std::uint64_t vertex = (e.v == v) ? e.u : e.v;
-
-		if (vertex == backward)
-			continue;
-		if (colorMap[vertex] == Colors::Grey) {
-			time_minimal[v] = std::min(time_minimal[v], time_discover[vertex]);
-		} else {
-			Graph::dfs(vertex, timer, v);
-			time_minimal[v] = std::min(time_minimal[v], time_minimal[vertex]);
-			if (time_minimal[vertex] > time_discover[v])
-				bridges.push_back(Edge(vertex, v, true, 0));
-		}
+namespace std {
+template <> struct hash<Graph::LightEdge> {
+	std::size_t operator()(const Graph::LightEdge &k) const {
+		return std::hash<std::uint64_t>()(k.u) ^
+			   std::hash<std::uint64_t>()(k.v);
 	}
-	colorMap[v] = Colors::Black;
+};
+} // namespace std
+
+Graph::Graph(std::uint64_t n, std::uint64_t m)
+	: matrix(n), edges(m, Edge(0, 0, false, 0)), colorMap(n, Colors::White),
+	  sums(n, 0), engine(rd()),
+	  rand(0, std::numeric_limits<std::uint64_t>::max()), time_discover(n),
+	  time_minimal(n) {
+	std::uniform_int_distribution<std::uint64_t> randomVertex(0, n - 1);
+	std::uint64_t u, v, index = 0;
+
+	std::unordered_set<LightEdge> helper;
+	helper.reserve(2.2 * m);
+
+	auto addEdge = [&]() {
+		helper.emplace(u, v);
+		helper.emplace(v, u);
+		matrix[u].push_back(index);
+		matrix[v].push_back(index);
+		edges[index].v = v;
+		edges[index++].u = u;
+	};
+
+	for (v = 1; v <= n - 1; ++v) {
+		std::uniform_int_distribution<std::uint64_t> vertex(0, v - 1);
+		u = vertex(engine);
+		addEdge();
+	}
+
+	for (std::uint64_t i = 0; i < m - n + 1; ++i) {
+		do {
+			u = randomVertex(engine);
+			v = randomVertex(engine);
+			auto it = helper.find(LightEdge{u, v});
+			if (it != helper.end())
+				u = v;
+		} while (u == v);
+
+		addEdge();
+	}
 };
 
-void Graph::determined_bridges_search() {
+std::ostream &operator<<(std::ostream &stream, const Graph &g) {
+	for (auto &e : g.edges)
+		stream << "(" << e.u << ", " << e.v << ")" << std::endl;
+	return stream;
+}
+
+void Graph::clear() {
+	bridges.clear();
+	for (auto &c : colorMap)
+		c = Colors::White;
+	for (auto &e : edges)
+		e.finished = false;
+};
+
+Graph::Bridges Graph::random_bridges_search() {
 	clear();
-	int timer = 0;
-	for (int i = 0; i < colorMap.size(); ++i) {
-		if (colorMap[i] != Colors::Black)
-			Graph::dfs(i, timer);
-	}
+	dfsForRandom(0);
+
+	for (auto e : edges)
+		if (e.shift == 0)
+			bridges.emplace_back(e.u, e.v);
+
+	return bridges;
 };
 
 void Graph::dfsForRandom(std::uint64_t v) {
@@ -67,62 +109,36 @@ void Graph::dfsForRandom(std::uint64_t v) {
 	colorMap[v] = Colors::Black;
 };
 
-void Graph::clear() {
-	for (auto &c : colorMap)
-		c = Colors::White;
-	for (auto &e : edges)
-		e.finished = false;
-};
-
-Graph::Graph(std::uint64_t n, std::uint64_t m)
-	: matrix(n), edges(m, Edge(0, 0, false, 0)), colorMap(n, Colors::White),
-	  sums(n, 0), engine(rd()),
-	  rand(0, std::numeric_limits<std::uint64_t>::max()), time_discover(n),
-	  time_minimal(n) {
-	std::vector<std::uint8_t> helper(n * n);
-	std::uniform_int_distribution<std::uint64_t> randomVertex(0, n - 1);
-	std::uint64_t u, v, index = 0;
-
-	auto addEdge = [&]() {
-		std::cout << "(" << u << ", " << v << ")" << std::endl;
-		helper[u * n + v] = helper[v * n + u] = 1;
-		matrix[u].push_back(index);
-		matrix[v].push_back(index);
-		edges[index].v = v;
-		edges[index++].u = u;
-	};
-
-	for (v = 1; v <= n - 1; ++v) {
-		std::uniform_int_distribution<std::uint64_t> vertex(0, v - 1);
-		u = vertex(engine);
-		addEdge();
-	}
-
-	for (std::uint64_t i = 0; i < m - n + 1; ++i) {
-		do {
-			u = randomVertex(engine);
-			v = randomVertex(engine);
-		} while (helper[u * n + v] != 0 || u == v);
-
-		addEdge();
-	}
-};
-
-void Graph::randomBridgeSearch() {
+Graph::Bridges Graph::determined_bridges_search() {
 	clear();
-	dfsForRandom(0);
-	// bool flag = true;
-	int i = 0;
+	std::uint64_t timer = 0;
+	for (std::uint64_t i = 0; i < colorMap.size(); ++i)
+		if (colorMap[i] != Colors::Black)
+			Graph::dfsForDeterm(i, timer);
+	return bridges;
+};
 
-	for (auto e : edges)
-		if (e.shift == 0) {
-			++i;
-			// std::cout << "Edge from " << e.u << " to " << e.v << " is a
-			// bridge."
-			//		  << std::endl;
-			// flag = false;
+void Graph::dfsForDeterm(std::uint64_t v, std::uint64_t &timer,
+						 std::uint64_t backward) {
+	if (colorMap[v] != Colors::White)
+		return;
+
+	colorMap[v] = Colors::Grey;
+	time_discover[v] = time_minimal[v] = timer++;
+	for (auto index : matrix[v]) {
+		auto &e = edges[index];
+		std::uint64_t vertex = (e.v == v) ? e.u : e.v;
+
+		if (vertex == backward)
+			continue;
+		if (colorMap[vertex] == Colors::Grey) {
+			time_minimal[v] = std::min(time_minimal[v], time_discover[vertex]);
+		} else {
+			Graph::dfsForDeterm(vertex, timer, v);
+			time_minimal[v] = std::min(time_minimal[v], time_minimal[vertex]);
+			if (time_minimal[vertex] > time_discover[v])
+				bridges.emplace_back(vertex, v);
 		}
-	// if (flag)
-	//	std::cout << "There are no bridges!" << std::endl;
-	std::cout << i << std::endl;
+	}
+	colorMap[v] = Colors::Black;
 };

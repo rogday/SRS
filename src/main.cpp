@@ -1,29 +1,32 @@
+#include <chrono>
 #include <cstdint>
+#include <functional>
 #include <iostream>
-
-#include <boost/graph/depth_first_search.hpp>
 
 #include <Graph.h>
 
+using namespace std::placeholders;
+
+void estimate(Graph &g, std::string_view name,
+			  std::function<Graph::Bridges(Graph *)> f) {
+	auto start = std::chrono::system_clock::now();
+	auto bridges = f(&g);
+	auto end = std::chrono::system_clock::now();
+
+	std::cout << name << " search found " << bridges.size()
+			  << " bridges and worked for "
+			  << std::chrono::duration<double>(end - start).count() << " sec."
+			  << std::endl;
+}
+
 int main() {
 	std::uint64_t n, m;
-	std::cout << "n, m = " << std::flush;
 	std::cin >> n >> m;
 
 	Graph g(n, m);
+	std::cout << g;
 
-	g.randomBridgeSearch();
-	g.determined_bridges_search();
-
-	std::cout << "FU" << std::endl;
-
-	bool flag = true;
-	std::cout << g.bridges.size() << std::endl;
-
-	/*for (auto &i : g.bridges) {
-		std::cout << i.u << "-" << i.v << "; " << std::flush;
-		flag = false;
-	}
-	if (flag)
-		std::cout << "There are no bridges!" << std::endl;*/
+	estimate(g, "Random", std::bind(&Graph::random_bridges_search, _1));
+	estimate(g, "Determenistic",
+			 std::bind(&Graph::determined_bridges_search, _1));
 }

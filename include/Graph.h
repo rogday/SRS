@@ -1,50 +1,63 @@
 #pragma once
-#include <iostream>
-#include <vector>
+
 #include <list>
-#include <random> 
+#include <random>
+#include <vector>
 
+class Graph {
+	friend std::ostream &operator<<(std::ostream &, const Graph &);
+	enum Colors { White, Grey, Black }; // for DFS
 
-class Graph{
-	enum Colors { White, Grey, Black };
-	struct Edge {
-		Edge(std::uint64_t u, std::uint64_t v, bool f, std::uint64_t shift)
-			: u(u), v(v), finished(f), shift(shift) {}
+  public:
+	struct LightEdge {
+		LightEdge(std::uint64_t u, std::uint64_t v) : u(u), v(v) {}
 		std::uint64_t u;
 		std::uint64_t v;
+		bool operator==(const LightEdge &other) const {
+			return (u == other.u && v == other.v);
+		}
+	};
+
+  private:
+	struct Edge : public LightEdge {
+		Edge(std::uint64_t u, std::uint64_t v, bool f, std::uint64_t shift)
+			: LightEdge(u, v), finished(f), shift(shift) {}
 		bool finished;
 		std::uint64_t shift;
 	};
+
+	// the Graph itself
 	std::vector<std::vector<std::uint64_t>> matrix;
 	std::vector<Edge> edges;
 
-	std::vector<Colors> colorMap;
-	std::vector<std::uint64_t> sums;
-
+	// utility
 	std::random_device rd;
 	std::default_random_engine engine;
 	std::uniform_int_distribution<std::uint64_t> rand;
 
+	std::vector<Colors> colorMap;
 
-	std::vector<int> time_discover;
-	std::vector<int> time_minimal;
-public:
-	std::vector<Edge> bridges;
-private:
-	void dfsForRandom(std::uint64_t v);
+	// for random algo
+	std::vector<std::uint64_t> sums;
+
+	// for determenistic algo
+	std::vector<std::uint64_t> time_discover;
+	std::vector<std::uint64_t> time_minimal;
+	std::vector<LightEdge> bridges;
+
+  private:
+	void dfsForRandom(std::uint64_t);
+	void dfsForDeterm(std::uint64_t, std::uint64_t &,
+					  std::uint64_t backward = -1);
+
 	void clear();
-public:
+
+  public:
 	Graph(std::uint64_t n, std::uint64_t m);
-	void randomBridgeSearch();
 
+	using Bridges = std::vector<LightEdge>;
+	std::vector<LightEdge> random_bridges_search();
+	std::vector<LightEdge> determined_bridges_search();
 
-
-	void dfs(int, int&, uint64_t);
-	//bridges search methods
-	void determined_bridges_search();
-
-	void dfs_based_randomized_bridges_search(int&);
-	std::vector<int> randomized_bridges_search(int&);
-
-	//2-bridges search method
+	std::vector<LightEdge> random_two_bridges_search();
 };
