@@ -1,4 +1,5 @@
 #include <chrono>
+#include <cmath>
 #include <cstdint>
 #include <functional>
 #include <iostream>
@@ -24,18 +25,24 @@ void estimate(Graph &g, std::string_view name, Functor f, bool show) {
 }
 
 int main() {
-	std::uint64_t n, m;
-	std::cin >> n >> m;
+	for (std::uint64_t n = 10; n < 1'000'000; n *= 10) {
+		std::uint64_t m = 2 * n;
 
-	Graph g(n, m);
+		std::cout << n << " " << m << std::endl;
 
-	bool show = (n * m <= 1000);
-	if (show)
-		std::cout << g;
+		Graph g(n, m);
 
-	estimate(g, "Random", std::bind(&Graph::random_bridges_search, _1), show);
-	estimate(g, "Determenistic",
-			 std::bind(&Graph::determined_bridges_search, _1), show);
-	estimate(g, "Random two-bridges",
-			 std::bind(&Graph::random_two_bridges_search, _1), show);
+		g.random_bridges_search(); // just to be fair in terms of cache,
+								   // everything is clearing before each
+								   // algorithm
+
+		estimate(g, "Random", std::bind(&Graph::random_bridges_search, _1),
+				 false);
+		estimate(g, "Determenistic",
+				 std::bind(&Graph::determined_bridges_search, _1), false);
+		estimate(g, "Random two-bridges",
+				 std::bind(&Graph::random_two_bridges_search, _1), false);
+
+		std::cout << std::endl;
+	}
 }
