@@ -24,8 +24,12 @@ void estimate(Graph &g, std::string_view name, Functor f, bool show) {
 }
 
 int main() {
-	std::uint64_t n, m;
+	std::uint64_t n, m, recursive;
+
+	std::cout << "Enter n and m: ";
 	std::cin >> n >> m;
+	std::cout << "Wanna sum recursion? ";
+	std::cin >> recursive;
 
 	Graph g(n, m);
 
@@ -33,9 +37,10 @@ int main() {
 	if (show)
 		std::cout << g;
 
-	estimate(g, "Random", std::bind(&Graph::random_bridges_search, _1), show);
+	estimate(g, "Random",
+			 std::bind(&Graph::random_bridges_search, _1, recursive), show);
 	estimate(g, "Determenistic",
-			 std::bind(&Graph::determined_bridges_search, _1), show);
+			 std::bind(&Graph::determined_bridges_search, _1, recursive), show);
 	estimate(g, "Random two-bridges",
-			 std::bind(&Graph::random_two_bridges_search, _1), show);
+			 std::bind(&Graph::random_two_bridges_search, _1, recursive), show);
 }

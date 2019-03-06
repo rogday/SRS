@@ -13,5 +13,5 @@ set(SORT_SOURCES  src/tests/sorts.cpp ${COMMON_SOURCES})
 set(BRIDGES_SOURCES  src/tests/bridges.cpp ${COMMON_SOURCES})
 
 add_executable(main ${TARGET_SOURCES})
-add_executable(sorts ${SORT_SOURCES})
-add_executable(bridges ${BRIDGES_SOURCES})
+#add_executable(sorts ${SORT_SOURCES})
+#add_executable(bridges ${BRIDGES_SOURCES})

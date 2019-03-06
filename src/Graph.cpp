@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <iostream>
+#include <stack>
 #include <unordered_set>
 
 #include <Graph.h>
@@ -78,9 +79,14 @@ void Graph::clear() {
 		e.finished = false;
 };
 
-std::vector<Graph::Bridges> Graph::random_two_bridges_search() {
+std::vector<Graph::Bridges> Graph::random_two_bridges_search(bool recursive) {
 	std::vector<Graph::Bridges> out;
-	random_bridges_search();
+
+	if (recursive)
+		dfsForRandomRecursive(0);
+	else
+		dfsForRandomIterative();
+
 	srs::radixSort(edges);
 
 	for (auto it = edges.begin(), jt = it; it != edges.end(); jt = it) {
@@ -102,18 +108,21 @@ std::vector<Graph::Bridges> Graph::random_two_bridges_search() {
 	return out;
 };
 
-Graph::Bridges Graph::random_bridges_search() {
+Graph::Bridges Graph::random_bridges_search(bool recursive) {
 	clear();
-	dfsForRandom(0);
+	if (recursive)
+		dfsForRandomRecursive(0);
+	else
+		dfsForRandomIterative();
 
-	for (auto e : edges)
+	for (auto &e : edges)
 		if (e.shift == 0)
 			bridges.emplace_back(e.u, e.v);
 
 	return bridges;
 };
 
-void Graph::dfsForRandom(std::uint64_t v) {
+void Graph::dfsForRandomRecursive(std::uint64_t v) {
 	if (colorMap[v] != Colors::White)
 		return;
 
@@ -133,7 +142,7 @@ void Graph::dfsForRandom(std::uint64_t v) {
 		} else {
 			tree_edge = true;
 			e.finished = true;
-			dfsForRandom(u);
+			dfsForRandomRecursive(u);
 		}
 
 		if (tree_edge) {
@@ -145,7 +154,68 @@ void Graph::dfsForRandom(std::uint64_t v) {
 	colorMap[v] = Colors::Black;
 };
 
-Graph::Bridges Graph::determined_bridges_search() {
+void Graph::dfsForRandomIterative() {
+	struct Node {
+		std::uint64_t vertex;
+		std::uint64_t start;
+	};
+
+	struct Tree {
+		std::uint64_t vertex;
+		std::uint64_t edge;
+	};
+
+	std::stack<Tree> ostov;
+	std::stack<Node> stack;
+	stack.push({0, 0});
+
+	colorMap[0] = Colors::Grey;
+	while (!stack.empty()) {
+		std::uint64_t u = stack.top().vertex;
+		std::uint64_t i = stack.top().start;
+		stack.pop();
+
+		while (i < matrix[u].size()) {
+			auto &e = edges[matrix[u][i]];
+			std::uint64_t v = ((e.u != u) ? e.u : e.v);
+
+			if (e.finished) {
+				++i;
+				continue;
+			}
+
+			e.finished = true;
+			if (colorMap[v] == Colors::White) {
+				ostov.push({v, matrix[u][i]});
+				stack.push({u, i + 1});
+
+				u = v;
+				colorMap[u] = Colors::Grey;
+				i = 0;
+			} else {
+				e.shift = rand(engine);
+				sums[v] ^= e.shift;
+				sums[u] ^= e.shift;
+				++i;
+			}
+		}
+
+		colorMap[u] = Colors::Black;
+	}
+
+	while (!ostov.empty()) {
+		std::uint64_t u = ostov.top().vertex;
+		std::uint64_t i = ostov.top().edge;
+		ostov.pop();
+
+		auto &e = edges[i];
+		e.shift = sums[u];
+		sums[e.v] ^= e.shift;
+		sums[e.u] ^= e.shift;
+	}
+};
+
+Graph::Bridges Graph::determined_bridges_search(bool) {
 	clear();
 	std::uint64_t timer = 0;
 	for (std::uint64_t i = 0; i < colorMap.size(); ++i)

@@ -49,7 +49,8 @@ class Graph {
 	std::vector<LightEdge> bridges;
 
   private:
-	void dfsForRandom(std::uint64_t);
+	void dfsForRandomRecursive(std::uint64_t);
+	void dfsForRandomIterative();
 	void dfsForDeterm(std::uint64_t, std::uint64_t &,
 					  std::uint64_t backward = -1);
 
@@ -59,10 +60,10 @@ class Graph {
 	Graph(std::uint64_t n, std::uint64_t m);
 
 	using Bridges = std::vector<LightEdge>;
-	Bridges random_bridges_search();
-	Bridges determined_bridges_search();
+	Bridges random_bridges_search(bool);
+	Bridges determined_bridges_search(bool);
 
-	std::vector<Bridges> random_two_bridges_search();
+	std::vector<Bridges> random_two_bridges_search(bool);
 };
 
 std::ostream &operator<<(std::ostream &, const Graph::LightEdge &);
