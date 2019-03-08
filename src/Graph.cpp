@@ -15,11 +15,14 @@ template <> struct hash<Graph::LightEdge> {
 };
 } // namespace std
 
+std::random_device Graph::rd;
+std::default_random_engine Graph::engine(rd());
+std::uniform_int_distribution<std::uint64_t>
+	Graph::rand(0, std::numeric_limits<std::uint64_t>::max());
+
 Graph::Graph(std::uint64_t n, std::uint64_t m)
 	: matrix(n), edges(m, Edge(0, 0, false, 0)), colorMap(n, Colors::White),
-	  sums(n, 0), engine(rd()),
-	  rand(0, std::numeric_limits<std::uint64_t>::max()), time_discover(n),
-	  time_minimal(n) {
+	  sums(n, 0), time_discover(n), time_minimal(n) {
 	std::uniform_int_distribution<std::uint64_t> randomVertex(0, n - 1);
 	std::uint64_t u, v, index = 0;
 

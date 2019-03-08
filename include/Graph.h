@@ -34,9 +34,9 @@ class Graph {
 	std::vector<Edge> edges;
 
 	// utility
-	std::random_device rd;
-	std::default_random_engine engine;
-	std::uniform_int_distribution<std::uint64_t> rand;
+	static std::random_device rd;
+	static std::default_random_engine engine;
+	static std::uniform_int_distribution<std::uint64_t> rand;
 
 	std::vector<Colors> colorMap;
 
