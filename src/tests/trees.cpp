@@ -17,4 +17,8 @@ int main() {
   for (int i = 50; i <= 100; ++i)
     tree.remove(i);
   tree.print();
+
+  for (int i = 0; i < 100; ++i)
+    tree.insert(i);
+  tree.print();
 }
