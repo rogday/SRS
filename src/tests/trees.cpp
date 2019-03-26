@@ -57,34 +57,40 @@ auto getRandomPart(std::vector<std::uint64_t> v, std::size_t size) {
 }
 
 int main() {
-  SplayTree<std::uint64_t> st;
-  Treap<std::uint64_t> tp;
-  std::set<std::uint64_t> set;
+  std::vector n{20'000, 100'000, 500'000, 2'500'000};
 
-  auto init = randVec(100'000);
-  auto insertable = randVec(10'000);
+  for (auto n : n) {
+    std::cout << n << " elements" << std::endl;
 
-  auto whole = init;
-  whole.insert(whole.end(), insertable.begin(), insertable.end());
+    SplayTree<std::uint64_t> st;
+    Treap<std::uint64_t> tp;
+    std::set<std::uint64_t> set;
 
-  auto findable = getRandomPart(whole, 10'000);
-  auto eraseable = getRandomPart(whole, 10'000);
+    auto init = randVec(n);
+    auto insertable = randVec(n / 10);
 
-  initialize(init, st, tp, set);
-  auto res = run(insertable, findable, eraseable, st, tp, set);
+    auto whole = init;
+    whole.insert(whole.end(), insertable.begin(), insertable.end());
 
-  std::vector ops{"insert", "find ", "erase"};
-  std::vector structure{"SplayTree", "Treap ", "std::set"};
+    auto findable = getRandomPart(whole, n / 10);
+    auto eraseable = getRandomPart(whole, n / 10);
 
-  std::cout << std::left << std::setfill(' ') << std::setw(13) << "";
-  for (std::size_t i = 0; i < structure.size(); ++i)
-    std::cout << std::setw(13) << std::string(i, ' ') + structure[i];
-  std::cout << std::endl;
+    initialize(init, st, tp, set);
+    auto res = run(insertable, findable, eraseable, st, tp, set);
 
-  for (std::size_t i = 0; i < structure.size(); ++i) {
-    std::cout << std::setw(13) << ops[i];
-    for (auto &time : res[i])
-      std::cout << std::setw(13) << time << " ";
+    std::vector ops{"insert", "find ", "erase"};
+    std::vector structure{"SplayTree", "Treap ", "std::set"};
+
+    std::cout << std::left << std::setfill(' ') << std::setw(13) << "";
+    for (std::size_t i = 0; i < structure.size(); ++i)
+      std::cout << std::setw(13) << std::string(i, ' ') + structure[i];
     std::cout << std::endl;
+
+    for (std::size_t i = 0; i < structure.size(); ++i) {
+      std::cout << std::setw(13) << ops[i];
+      for (auto &time : res[i])
+        std::cout << std::setw(13) << time << " ";
+      std::cout << std::endl;
+    }
   }
 }
