@@ -16,6 +16,8 @@
 #define ESTIMATE(what)                                                         \
   std::vector<double> what##_ = {estimate(what##able, t, what<Trees>)...};
 
+#define VECTOR_ARGS(what) std::vector<std::uint64_t> &what##able,
+
 #define REPEAT(what) what(insert) what(find) what(erase)
 
 REPEAT(MEMBER)
@@ -35,10 +37,7 @@ void initialize(std::vector<std::uint64_t> &insertable, Trees &... t) {
   ESTIMATE(insert)
 }
 
-template <class... Trees>
-auto run(std::vector<std::uint64_t> &insertable,
-         std::vector<std::uint64_t> &findable,
-         std::vector<std::uint64_t> &eraseable, Trees &... t) {
+template <class... Trees> auto run(REPEAT(VECTOR_ARGS) Trees &... t) {
   REPEAT(ESTIMATE)
   return std::vector{insert_, find_, erase_};
 }
